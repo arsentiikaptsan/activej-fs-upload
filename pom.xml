@@ -11,7 +11,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <activej.version>4.3</activej.version>
+        <activej.version>4.2</activej.version>
     </properties>
 
     <dependencies>

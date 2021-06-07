@@ -9,9 +9,12 @@ import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.Module;
 import io.activej.launcher.Launcher;
 import io.activej.service.ServiceGraphModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -25,9 +28,15 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
  */
 @SuppressWarnings("unused")
 public final class FileUploadExample extends Launcher {
+	static {
+		System.setProperty("chk:io.activej.bytebuf.ByteBuf", "on");
+	}
+
+	private static Logger LOGGER = LoggerFactory.getLogger(FileUploadExample.class);
+
 	private static final int SERVER_PORT = 6732;
 	private static final String FILE_NAME = "example.txt";
-	private static final String EXAMPLE_TEXT = "example text";
+	private static final String EXAMPLE_TEXT = "example text".repeat(10000);
 
 	private Path clientFile;
 
@@ -65,11 +74,21 @@ public final class FileUploadExample extends Launcher {
 		CompletableFuture<Void> future = eventloop.submit(() ->
 				// consumer result here is a marker of it being successfully uploaded
 				ChannelFileReader.open(executor, clientFile)
-						.then(cfr -> cfr.streamTo(client.upload(FILE_NAME, EXAMPLE_TEXT.length())))
-						.whenResult(() -> System.out.printf("%nFile '%s' successfully uploaded%n%n", FILE_NAME))
-		);
+						.whenResult(() -> LOGGER.info("File opened"))
+						.then(cfr -> cfr
+								.peek(buf -> LOGGER.info("FR emitted piece of data, size: {}", buf.readRemaining()))
+								.withEndOfStream(voidPromise -> voidPromise.map($null -> {
+									LOGGER.info("Got end of the stream in producer");
+									return $null;
+								}))
+								.streamTo(client.upload(FILE_NAME, EXAMPLE_TEXT.length())
+										.whenResult(() -> LOGGER.info("Consumer is opened"))
+										.map(byteBufChannelConsumer -> byteBufChannelConsumer
+												.peek(buf -> LOGGER.info("Consumer got piece of data, size: {}", buf.readRemaining()))
+												.withAcknowledgement(ack -> ack.whenComplete(() -> LOGGER.info("Got ack")))))));
 		try {
 			future.get();
+			LOGGER.info("Success");
 		} finally {
 			executor.shutdown();
 		}
