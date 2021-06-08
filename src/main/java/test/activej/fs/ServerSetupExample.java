@@ -13,6 +13,10 @@ import java.nio.file.Path;
  */
 //[START EXAMPLE]
 public class ServerSetupExample extends SimpleTcpServerLauncher {
+	static {
+		System.setProperty("chk:io.activej.bytebuf.ByteBuf", "on");
+	}
+
 	private Path storage;
 
 	@Override
