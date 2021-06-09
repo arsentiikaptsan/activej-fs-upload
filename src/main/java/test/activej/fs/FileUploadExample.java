@@ -13,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +30,7 @@ public final class FileUploadExample extends Launcher {
 		System.setProperty("chk:io.activej.bytebuf.ByteBuf", "on");
 	}
 
-	private static Logger LOGGER = LoggerFactory.getLogger(FileUploadExample.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileUploadExample.class);
 
 	private static final int SERVER_PORT = 6732;
 	private static final String FILE_NAME = "example.txt";
@@ -58,7 +56,7 @@ public final class FileUploadExample extends Launcher {
 	}
 
 	@Provides
-	RemoteActiveFs remoteFsClient(Eventloop eventloop) throws UnknownHostException {
+	RemoteActiveFs remoteFsClient(Eventloop eventloop) {
 		return RemoteActiveFs.create(eventloop, new InetSocketAddress(SERVER_PORT));
 	}
 
